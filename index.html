@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub App Didattiche</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Segoe UI', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 4px solid transparent;
+        }
+
+        .app-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            border-color: #ffd700;
+        }
+
+        .app-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .app-card h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .app-card p {
+            color: #666;
+            font-size: 1em;
+        }
+
+        /* Viewer a tutto schermo */
+        .viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: white;
+        }
+
+        .viewer.active {
+            display: block;
+        }
+
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Pulsante Home flottante */
+        .floating-home {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 10000;
+            display: none;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .floating-home.active {
+            display: flex;
+        }
+
+        .app-title-badge {
+            background: rgba(102, 126, 234, 0.95);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn-home {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+            color: #333;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-home:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+            
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .floating-home {
+                top: 10px;
+                right: 10px;
+                gap: 5px;
+            }
+
+            .app-title-badge {
+                display: none; /* Nasconde il titolo su mobile per risparmiare spazio */
+            }
+
+            .btn-home {
+                padding: 10px 15px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Page -->
+    <div id="homePage" class="container">
+        <header>
+            <h1>🎓 Hub App Didattiche 🎮</h1>
+            <p>Seleziona un'app per iniziare a imparare!</p>
+        </header>
+
+        <div class="apps-grid" id="appsGrid"></div>
+    </div>
+
+    <!-- Pulsante Home flottante -->
+    <div id="floatingHome" class="floating-home">
+        <span class="app-title-badge" id="appTitleBadge"></span>
+        <button class="btn-home" onclick="goHome()">🏠 Home</button>
+    </div>
+
+    <!-- App Viewer a tutto schermo -->
+    <div id="viewer" class="viewer">
+        <div class="iframe-container">
+            <iframe id="appFrame" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Configurazione delle app - Puoi aggiungere nuove app qui!
+        const apps = [
+            {
+                name: "Trova la Somma",
+                description: "Esercizi di addizione",
+                icon: "➕",
+                url: "https://trovalasomma.netlify.app/"
+            },
+            {
+                name: "La Valle dei Numeri",
+                description: "Avventura con i numeri",
+                icon: "🔢",
+                url: "https://lavalledeinumeri.netlify.app/"
+            },
+            {
+                name: "Mate in Vacanza",
+                description: "Matematica sotto l'ombrellone",
+                icon: "🏖️",
+                url: "https://mateinvacanza.netlify.app/"
+            },
+            {
+                name: "Quaderno Vacanze",
+                description: "Attività estive divertenti",
+                icon: "📚",
+                url: "https://dorahdeah.github.io/quadernovacanze/"
+            }
+            // Aggiungi nuove app qui:
+            // {
+            //     name: "Nome App",
+            //     description: "Descrizione",
+            //     icon: "🎯",
+            //     url: "https://esempio.com"
+            // }
+        ];
+
+        // Genera le card delle app
+        function renderApps() {
+            const grid = document.getElementById('appsGrid');
+            grid.innerHTML = '';
+            
+            apps.forEach((app, index) => {
+                const card = document.createElement('div');
+                card.className = 'app-card';
+                card.onclick = () => openApp(index);
+                card.innerHTML = `
+                    <span class="app-icon">${app.icon}</span>
+                    <h3>${app.name}</h3>
+                    <p>${app.description}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Apri un'app a tutto schermo
+        function openApp(index) {
+            const app = apps[index];
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('viewer').classList.add('active');
+            document.getElementById('floatingHome').classList.add('active');
+            document.getElementById('appTitleBadge').textContent = app.icon + ' ' + app.name;
+            document.getElementById('appFrame').src = app.url;
+            // Blocca lo scroll del body
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Torna alla home
+        function goHome() {
+            document.getElementById('homePage').classList.remove('hidden');
+            document.getElementById('viewer').classList.remove('active');
+            document.getElementById('floatingHome').classList.remove('active');
+            document.getElementById('appFrame').src = '';
+            // Riabilita lo scroll
+            document.body.style.overflow = 'auto';
+            // Torna in cima alla pagina
+            window.scrollTo(0, 0);
+        }
+
+        // Inizializza
+        renderApps();
+    </script>
+</body>
+</html>
